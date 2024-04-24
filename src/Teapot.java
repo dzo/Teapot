@@ -21,12 +21,44 @@ public class Teapot {
     // light direction
     private Vec3f lightdir=new Vec3f(0.577f,-0.577f,0.577f);
     // colours
-    private Vec3f ambient_colour=new Vec3f(20,20,20);
+    private float ambient_strength=0.25f;
     private Vec3f material_colour;
     private Vec3f light_colour=new Vec3f(255,255,255);
-    private float specularstrength=0.65f;
+    private float specular_strength =0.65f;
+    private float shininess=16;
     // teapot rotation
     private Vec3f rotation;
+    private int flags=SPECULAR | DIFFUSE;
+    public static final int WIREFRAME=1;
+    public static final int COLOURPATCHES=2;
+    public static final int SPECULAR=4;
+    public static final int DIFFUSE=8;
+
+    private int quadSize =3;
+
+    public int getQuadSize() {
+        return quadSize;
+    }
+
+    public void setQuadSize(int quadSize) {
+        if(quadSize<16 && quadSize>0)
+           this.quadSize = quadSize;
+    }
+    public float getShininess() {
+        return shininess;
+    }
+
+    public void setShininess(float shininess) {
+        if(shininess>2 && shininess<200)
+            this.shininess = shininess;
+    }
+    int getFlags() {
+        return flags;
+    }
+
+    void setFlags(int f) {
+        flags=f;
+    }
 
     // make the rotation matrix from the rotation vector
     private void maketrotationmatrix(Vec3f rotation, float size) {
@@ -59,18 +91,21 @@ public class Teapot {
         // don't draw it if it's facing away from us.
         if(normal.z<=0) return;
         normal.normalise();
+        // get the diffuse lighting strength
         float dp=normal.dot(lightdir);
         float diff=clamp(dp, 1.0f);
         // diffuse lighting
         Vec3f diffuse=material_colour.mul(diff);
         // specular lighting
         float spec=clamp(2.0f*dp*normal.z-lightdir.z, 2);
-        spec=spec*spec;
-        spec=spec*spec;
-        spec=spec*spec;
-        spec=specularstrength*spec;
+        spec=(float)Math.pow(spec,shininess);
+        spec= specular_strength *spec;
         Vec3f specular=light_colour.mul(spec);
-        Vec3f res=ambient_colour.add(diffuse.add(specular));
+        Vec3f res=material_colour.mul(ambient_strength);
+        if((flags & DIFFUSE)!=0)
+            res=res.add(diffuse);
+        if((flags & SPECULAR)!=0)
+            res=res.add(specular);
         Vec3f colour=new Vec3f(clamp(res.x, 255),clamp(res.y, 255),clamp(res.z, 255));
         // use average z value for the quad as the list index.
         // so they are drawn with the closest last
@@ -144,7 +179,7 @@ public class Teapot {
     }
 
     void add_bezier_patch(Vec3f[][] p) {
-        int PX=2;
+
         // a patch has 16 control points
         // we use the length of the 1d curves to decide how many divisions to use.
         float d1=bezier_length(p[0][0],p[0][1],p[0][2],p[0][3]);
@@ -155,12 +190,12 @@ public class Teapot {
         float maxyd=(float)Math.sqrt(Math.max(d1,d4));
         float maxxd=(float)Math.sqrt(Math.max(d2,d3));
         // these are the x and y divisions
-        int xdivs= (int) (maxxd/PX);
-        int ydivs= (int) (maxyd/PX);
+        int xdivs= (int) (maxxd/ quadSize);
+        int ydivs= (int) (maxyd/ quadSize);
 
-        // a min of 4 divs and a max of 20
-         xdivs=clamp(xdivs,4,20);
-         ydivs=clamp(ydivs,4,20);
+        // a min of 4 divs and a max of 40
+         xdivs=clamp(xdivs,4,40);
+         ydivs=clamp(ydivs,4,40);
 
         Vec3f[][] py=new Vec3f[4][ydivs+1];
         float h = 1.f / ydivs;
@@ -186,7 +221,11 @@ public class Teapot {
             Quad q = quad_lists[i];
             while (q != null) {
                 g.setColor(q.col);
-                g.fillPolygon(q.px,q.py,4);
+                if((flags & WIREFRAME)!=0)
+                    g.drawPolygon(q.px,q.py,4);
+                else
+                    g.fillPolygon(q.px,q.py,4);
+
                 q =q.next;
             }
         }
@@ -200,14 +239,18 @@ public class Teapot {
         size=sz;
     }
 
-    void addrotation(Vec3f v) {
+    void setColour(Vec3f col) {
+        material_colour=col;
+    }
+
+    void addRotation(Vec3f v) {
         rotation=rotation.add(v);
     }
-    void setrotation(Vec3f v) {
+    void setRotation(Vec3f v) {
         rotation=v;
     }
 
-    Vec3f getrotation() {
+    Vec3f getRotation() {
         return rotation;
     }
 
@@ -217,6 +260,8 @@ public class Teapot {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
         g.setRenderingHint(RenderingHints.KEY_RENDERING,RenderingHints.VALUE_RENDER_SPEED);
         for(int ii=0;ii<32;ii++) {
+            if((flags & COLOURPATCHES)!=0)
+                material_colour=new Vec3f((ii&0x3)*64.0f+63,(ii/16)*128.0f,((ii&0xc)/4)*64.0f+63);
             // each patch is defined by 16 control points
             Vec3f[][] p = new Vec3f[4][4];
             for (int j = 0; j < 4; j++) {
@@ -224,6 +269,7 @@ public class Teapot {
                     p[j][k] = vrotate(TeapotData.teapotVertices[TeapotData.teapotPatches[ii][j * 4 + k] - 1]);
                 }
             }
+
             add_bezier_patch(p);
         }
         draw_all_quads(g);
