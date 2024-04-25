@@ -9,7 +9,7 @@ public class Teapot {
         Quad next;
     }
     // size of draw order list array
-    private final int ZSIZE=256;
+    private final int ZSIZE=1024;
     // rotation matrix
     private float[][] rmx=new float[3][3];
     // position on the screen
@@ -94,8 +94,12 @@ public class Teapot {
     }
     // add a quad to one of the lists and work out what colour to draw it.
     void add_quad(Vec3f p0, Vec3f p1, Vec3f p2, Vec3f p3) {
+        Vec3f p0p=perspective(p0);
+        Vec3f p1p=perspective(p1);
+        Vec3f p2p=perspective(p2);
+        Vec3f p3p=perspective(p3);
         // get the normal vector
-        Vec3f normal=p2.sub(p0).cross(p3.sub(p0));
+        Vec3f normal=p2p.sub(p0p).cross(p3p.sub(p0p));
         // don't draw it if it's facing away from us.
         if(normal.z<=0) return;
         normal.normalise();
@@ -117,12 +121,9 @@ public class Teapot {
         Vec3f colour=new Vec3f(clamp(res.x, 255),clamp(res.y, 255),clamp(res.z, 255));
         // use average z value for the quad as the list index.
         // so they are drawn with the closest last
-        int zindex=clamp((int)((p0.z+p1.z+p2.z+p3.z)/4)+ZSIZE/2,0,ZSIZE-1);
+        int zindex=clamp((int)((p0p.z+p1p.z+p2p.z+p3p.z)/4)+ZSIZE/2,0,ZSIZE-1);
         Quad q= new Quad();
-        Vec3f p0p=perspective(p0);
-        Vec3f p1p=perspective(p1);
-        Vec3f p2p=perspective(p2);
-        Vec3f p3p=perspective(p3);
+        
         q.px= new int[]{(int) (p0p.x), (int) (p1p.x), (int) (p2p.x), (int) (p3p.x)};
         q.py= new int[]{(int) (p0p.y), (int) (p1p.y), (int) (p2p.y), (int) (p3p.y)};
         q.col=new Color((int)colour.x,(int)colour.y,(int)colour.z);

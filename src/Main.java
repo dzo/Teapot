@@ -5,6 +5,7 @@ public class Main extends GameEngine {
     private Teapot teapot;
     private Vec3f colour=new Vec3f(100,50,50);
     private boolean paused;
+    private int w=1024,h=768;
     int px,py;
     Vec3f rot;
     float fps=60;
@@ -15,8 +16,9 @@ public class Main extends GameEngine {
 
     @Override
     public void init() {
+        setWindowSize(w, h);
         // make a chocolate teapot;
-        teapot=new Teapot(new Vec3f(0,0,50),new Vec3f(0,0,0),colour,new Vec3f(256,256,0));
+        teapot=new Teapot(new Vec3f(0,0,100),new Vec3f(0,0,0),colour,new Vec3f(w/2,h/2,0));
         teapot.setFlags(Teapot.DIFFUSE | Teapot.SPECULAR | Teapot.COLOURPATCHES);
     }
 
@@ -31,7 +33,7 @@ public class Main extends GameEngine {
     @Override
     public void paintComponent() {
         changeColor(Color.BLACK);
-        drawSolidRectangle(0,0,512,512);
+        drawSolidRectangle(0,0,width(),height());
         teapot.setColour(colour);
         teapot.draw(mGraphics);
         changeColor(Color.WHITE);
