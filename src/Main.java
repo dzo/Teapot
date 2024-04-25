@@ -18,7 +18,7 @@ public class Main extends GameEngine {
     public void init() {
         setWindowSize(w, h);
         // make a chocolate teapot;
-        teapot=new Teapot(new Vec3f(0,0,100),new Vec3f(0,0,0),colour,new Vec3f(w/2,h/2,0));
+        teapot=new Teapot(new Vec3f(0,0,80),new Vec3f(0,0,0),colour,new Vec3f(w/2,h/2,0));
         teapot.setFlags(Teapot.DIFFUSE | Teapot.SPECULAR | Teapot.COLOURPATCHES);
     }
 

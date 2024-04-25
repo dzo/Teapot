@@ -94,6 +94,7 @@ public class Teapot {
     }
     // add a quad to one of the lists and work out what colour to draw it.
     void add_quad(Vec3f p0, Vec3f p1, Vec3f p2, Vec3f p3) {
+        // apply perspective transform to each point
         Vec3f p0p=perspective(p0);
         Vec3f p1p=perspective(p1);
         Vec3f p2p=perspective(p2);
@@ -132,19 +133,26 @@ public class Teapot {
     }
 
     // apply the rotation matrix to a vector stored in the array of teapot vertices
-    Vec3f vrotate(float[] v) {
+    Vec3f vrotate1(float[] v) {
         float v2=v[2]-2.0f;
         return new Vec3f(rmx[0][0]*v[0]+rmx[0][1]*v[1]+rmx[0][2]*v2+positionx,
                 (rmx[1][0]*v[0]+rmx[1][1]*v[1]+rmx[1][2]*v2)+positiony,
                 (rmx[2][0]*v[0]+rmx[2][1]*v[1]+rmx[2][2]*v2));
     }
 
-    // square of the distance between two vectors
-    float dist(Vec3f p0,Vec3f p1) {
-        return (p0.x-p1.x)*(p0.x-p1.x)+(p0.y-p1.y)*(p0.y-p1.y)+(p0.z-p1.z)*(p0.z-p1.z);
+    Vec3f vrotate(Vec3f v) {
+        float v2=v.z-2.0f;
+        return new Vec3f(rmx[0][0]*v.x+rmx[0][1]*v.y+rmx[0][2]*v2+positionx,
+                (rmx[1][0]*v.x+rmx[1][1]*v.y+rmx[1][2]*v2)+positiony,
+                (rmx[2][0]*v.x+rmx[2][1]*v.y+rmx[2][2]*v2));
     }
 
-    // estimate of the square of the length of a bezier curve
+    // the distance between two vectors
+    float dist(Vec3f p0,Vec3f p1) {
+        return (float)Math.sqrt((p0.x-p1.x)*(p0.x-p1.x)+(p0.y-p1.y)*(p0.y-p1.y)+(p0.z-p1.z)*(p0.z-p1.z));
+    }
+
+    // estimate of the length of a bezier curve
     float bezier_length(Vec3f p0,Vec3f p1,Vec3f p2,Vec3f p3) {
         Vec3f m=p1.mid(p2);
         Vec3f t1=p0.mid(p1);
@@ -193,20 +201,25 @@ public class Teapot {
 
         // a patch has 16 control points
         // we use the length of the 1d curves to decide how many divisions to use.
-        float d1=bezier_length(p[0][0],p[0][1],p[0][2],p[0][3]);
-        float d2=bezier_length(p[0][0],p[1][0],p[2][0],p[3][0]);
-        float d3=bezier_length(p[0][3],p[1][3],p[2][3],p[3][3]);
-        float d4=bezier_length(p[3][0],p[3][1],p[3][2],p[3][3]);
+        float maxyd=0;
+        float maxxd=0;
+        for(int i=0;i<4;i++) {
+            maxyd=Math.max(maxyd,bezier_length(p[i][0],p[i][1],p[i][2],p[i][3]));
+            maxxd=Math.max(maxxd,bezier_length(p[0][i],p[1][i],p[2][i],p[3][i]));
+        }
+//        float d2=bezier_length(p[0][0],p[1][0],p[2][0],p[3][0]);
+//        float d3=bezier_length(p[0][3],p[1][3],p[2][3],p[3][3]);
+//        float d4=bezier_length(p[3][0],p[3][1],p[3][2],p[3][3]);
 
-        float maxyd=(float)Math.sqrt(Math.max(d1,d4));
-        float maxxd=(float)Math.sqrt(Math.max(d2,d3));
+//        float maxyd=(float)(Math.max(d1,d4));
+//        float maxxd=(float)(Math.max(d2,d3));
         // these are the x and y divisions
         int xdivs= (int) (maxxd/ quadSize);
         int ydivs= (int) (maxyd/ quadSize);
 
         // a min of 4 divs and a max of 40
-        xdivs=clamp(xdivs,4,40);
-        ydivs=clamp(ydivs,4,40);
+        xdivs=clamp(xdivs,4,60);
+        ydivs=clamp(ydivs,4,60);
 
         Vec3f[][] py=new Vec3f[4][ydivs+1];
         float h = 1.f / ydivs;
@@ -277,7 +290,20 @@ public class Teapot {
             Vec3f[][] p = new Vec3f[4][4];
             for (int j = 0; j < 4; j++) {
                 for (int k = 0; k < 4; k++) {
-                    p[j][k] = vrotate(TeapotData.teapotVertices[TeapotData.teapotPatches[ii][j * 4 + k] - 1]);
+                    float[] v=TeapotData.teapotVertices[TeapotData.teapotPatches[ii][j * 4 + k] - 1];
+                    Vec3f vv=new Vec3f(v[0],v[1],v[2]);
+                    if(ii>19&&ii<28) {
+                        vv.x*=1.077;
+                        vv.y*=1.077;
+                    }
+                    if(ii>15&&ii<18) {
+                        if(j==0)
+                            vv.x+=0.23;
+                        if(j==1)
+                            vv.z+=0.4;
+                    }
+                    p[j][k] = vrotate(vv);
+
                 }
             }
             add_bezier_patch(p);
