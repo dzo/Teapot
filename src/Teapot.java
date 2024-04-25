@@ -34,6 +34,8 @@ public class Teapot {
     public static final int SPECULAR=4;
     public static final int DIFFUSE=8;
 
+    // centre of the window
+    private Vec3f centre;
     private int quadSize =3;
 
     public int getQuadSize() {
@@ -83,7 +85,13 @@ public class Teapot {
         for(int i=0;i<ZSIZE;i++)
             quad_lists[i]=null;
     }
-
+    // simple perspective transform
+    Vec3f perspective(Vec3f p) {
+        Vec3f p1=p.sub(centre);
+        float sc=p1.z/400f+1.0f;
+        p1=p1.mul(sc).add(centre);
+        return p1;
+    }
     // add a quad to one of the lists and work out what colour to draw it.
     void add_quad(Vec3f p0, Vec3f p1, Vec3f p2, Vec3f p3) {
         // get the normal vector
@@ -109,12 +117,14 @@ public class Teapot {
         Vec3f colour=new Vec3f(clamp(res.x, 255),clamp(res.y, 255),clamp(res.z, 255));
         // use average z value for the quad as the list index.
         // so they are drawn with the closest last
-        float z=Math.max(Math.max(Math.max(p0.z,p1.z),p2.z),p3.z);
-        int zindex=clamp((int)z+ZSIZE/2,0,ZSIZE-1);
-       // int zindex=clamp((int)((p0.z+p1.z+p2.z+p3.z)/4)+ZSIZE/2,0,ZSIZE-1);
+        int zindex=clamp((int)((p0.z+p1.z+p2.z+p3.z)/4)+ZSIZE/2,0,ZSIZE-1);
         Quad q= new Quad();
-        q.px= new int[]{(int) (p0.x + 0.5f), (int) (p1.x + 0.5f), (int) (p2.x + 0.5f), (int) (p3.x + 0.5f)};
-        q.py= new int[]{(int) (p0.y + 0.5f), (int) (p1.y + 0.5f), (int) (p2.y + 0.5f), (int) (p3.y + 0.5f)};
+        Vec3f p0p=perspective(p0);
+        Vec3f p1p=perspective(p1);
+        Vec3f p2p=perspective(p2);
+        Vec3f p3p=perspective(p3);
+        q.px= new int[]{(int) (p0p.x), (int) (p1p.x), (int) (p2p.x), (int) (p3p.x)};
+        q.py= new int[]{(int) (p0p.y), (int) (p1p.y), (int) (p2p.y), (int) (p3p.y)};
         q.col=new Color((int)colour.x,(int)colour.y,(int)colour.z);
         q.next=quad_lists[zindex];
         quad_lists[zindex]=q;
@@ -194,8 +204,8 @@ public class Teapot {
         int ydivs= (int) (maxyd/ quadSize);
 
         // a min of 4 divs and a max of 40
-         xdivs=clamp(xdivs,4,40);
-         ydivs=clamp(ydivs,4,40);
+        xdivs=clamp(xdivs,4,40);
+        ydivs=clamp(ydivs,4,40);
 
         Vec3f[][] py=new Vec3f[4][ydivs+1];
         float h = 1.f / ydivs;
@@ -216,7 +226,6 @@ public class Teapot {
         }
     }
     void draw_all_quads(Graphics g) {
-        //g.setPaintMode();
         for (int i = 0; i < ZSIZE; i++) {
             Quad q = quad_lists[i];
             while (q != null) {
@@ -231,12 +240,13 @@ public class Teapot {
         }
     }
 
-    Teapot(int px, int py, float sz, Vec3f rot, Vec3f col) {
+    Teapot(Vec3f position, Vec3f rot, Vec3f col, Vec3f centre) {
         material_colour=col;
         rotation=rot;
-        positionx=px;
-        positiony=py;
-        size=sz;
+        positionx=(int)(position.x+centre.x);
+        positiony=(int)(position.y+centre.y);
+        size=(int)(position.z+centre.z);
+        this.centre=centre;
     }
 
     void setColour(Vec3f col) {
@@ -269,7 +279,6 @@ public class Teapot {
                     p[j][k] = vrotate(TeapotData.teapotVertices[TeapotData.teapotPatches[ii][j * 4 + k] - 1]);
                 }
             }
-
             add_bezier_patch(p);
         }
         draw_all_quads(g);

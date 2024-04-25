@@ -16,7 +16,7 @@ public class Main extends GameEngine {
     @Override
     public void init() {
         // make a chocolate teapot;
-        teapot=new Teapot(256,256,50,new Vec3f(0,0,0),colour);
+        teapot=new Teapot(new Vec3f(0,0,50),new Vec3f(0,0,0),colour,new Vec3f(256,256,0));
         teapot.setFlags(Teapot.DIFFUSE | Teapot.SPECULAR | Teapot.COLOURPATCHES);
     }
 
