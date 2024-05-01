@@ -133,13 +133,6 @@ public class Teapot {
     }
 
     // apply the rotation matrix to a vector stored in the array of teapot vertices
-    Vec3f vrotate1(float[] v) {
-        float v2=v[2]-2.0f;
-        return new Vec3f(rmx[0][0]*v[0]+rmx[0][1]*v[1]+rmx[0][2]*v2+positionx,
-                (rmx[1][0]*v[0]+rmx[1][1]*v[1]+rmx[1][2]*v2)+positiony,
-                (rmx[2][0]*v[0]+rmx[2][1]*v[1]+rmx[2][2]*v2));
-    }
-
     Vec3f vrotate(Vec3f v) {
         float v2=v.z-2.0f;
         return new Vec3f(rmx[0][0]*v.x+rmx[0][1]*v.y+rmx[0][2]*v2+positionx,
@@ -149,7 +142,7 @@ public class Teapot {
 
     // the distance between two vectors
     float dist(Vec3f p0,Vec3f p1) {
-        return (float)Math.sqrt((p0.x-p1.x)*(p0.x-p1.x)+(p0.y-p1.y)*(p0.y-p1.y)+(p0.z-p1.z)*(p0.z-p1.z));
+        return p0.sub(p1).length();
     }
 
     // estimate of the length of a bezier curve

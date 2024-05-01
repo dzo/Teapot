@@ -14,7 +14,6 @@ public class Vec3f {
     Vec3f sub(Vec3f p) {
         return new Vec3f(x - p.x, y - p.y, z - p.z);
     }
-
     Vec3f add(Vec3f p) {
         return new Vec3f(x+p.x, y+p.y, z+p.z);
     }
@@ -26,14 +25,14 @@ public class Vec3f {
     Vec3f mul(float f) {
         return new Vec3f(f*x, f*y, f*z);
     }
-    Vec3f mul(Vec3f p) {
-        return new Vec3f(p.x*x, p.y*y, p.z*z);
-    }
     Vec3f mid(Vec3f p) {
         return new Vec3f((p.x+x)*.5f, (p.y+y)*.5f, (p.z+z)*.5f);
     }
+    float length() {
+        return (float)Math.sqrt(x*x+y*y+z*z);
+    }
     void normalise() {
-        float mag=1/(float)Math.sqrt(x*x+y*y+z*z);
+        float mag=1/length();
         x=x*mag;
         y=y*mag;
         z=z*mag;
